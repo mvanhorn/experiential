@@ -128,6 +128,16 @@ class GatewayRungDispatchPolicy(ContractModel):
             lower runs first under ``--scheduling-policy priority``). Author it
             only on a self-hosted vLLM rung: any other provider would receive
             an unknown field. Default ``False`` sends nothing.
+        priority_tier_attested: The host attests that this platform-funded,
+            priority-carded rung IS the priority tier: a dedicated fast lane on
+            a provider that reports no processing tier (a third-party
+            serverless or dedicated endpoint the host sells only as ``:fast``).
+            An admitted priority attempt the rung serves with no tier evidence
+            then settles at the priority card instead of holding the
+            reservation unresolved. It sends nothing upstream and applies none
+            of the self-hosted levers (``upstream_priority``). Explicit
+            evidence still wins (a reported standard tier settles standard).
+            Default ``False`` keeps the evidence rule.
     """
 
     concurrency_bound: int | None = Field(default=None, ge=1)
@@ -226,6 +236,22 @@ class GatewayRungDispatchPolicy(ContractModel):
     priority_overflow_paying: float | None = Field(default=None, ge=1, le=4, allow_inf_nan=False)
     priority_overflow_pro: float | None = Field(default=None, ge=1, le=4, allow_inf_nan=False)
     upstream_priority: bool = False
+    priority_tier_attested: bool = False
+    access_programs: dict[str, str] | None = None
+    """OpenAI access-program opt-ins written into the Responses request body.
+
+    OpenAI gates certain behaviors (Daybreak Blue's reduced cybersecurity
+    refusals on its mainline models) behind a request field,
+    ``{"access_programs": {"cyber": "daybreak_blue"}}``, admitted only for a
+    project approved for the program. The caller never sends it: Claude Code
+    speaks the Messages lane, which carries no such field, so the host injects
+    it for the one deployment an operator authored with it. Deployment-authored,
+    never caller-sent, and built at resolve time into the per-request payload
+    (not published in the snapshot), so an unflagged fleet simply never injects
+    it. The Responses wire is the only dialect that carries it, so
+    ``build_rung_dispatch`` injects it only on ``openai_responses``. ``None``
+    injects nothing.
+    """
     max_prompt_tokens: int | None = Field(default=None, ge=1)
     """The longest prompt this rung takes, by the prompt's lower-bound estimate.
 
