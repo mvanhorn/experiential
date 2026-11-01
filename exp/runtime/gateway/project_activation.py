@@ -157,7 +157,7 @@ class LocalArtifactProjectActivationRepository:
         project = ProjectStore(self.root, project_ref)
         try:
             project.load_project()
-            resolved_ref = activation_ref or _only_policy(project.artifacts)
+            resolved_ref = activation_ref or only_router_policy(project.artifacts)
             activation = load_project_activation(
                 project.artifacts,
                 project_ref=project_ref,
@@ -231,7 +231,7 @@ def load_project_activation(
         raise ProjectActivationError(f"router policy {activation_ref} is invalid") from exc
 
 
-def _only_policy(store: ArtifactStore) -> ArtifactId:
+def only_router_policy(store: ArtifactStore) -> ArtifactId:
     """Resolve the only completed router policy in one project artifact store."""
     policies = tuple(
         artifact_id
@@ -241,7 +241,7 @@ def _only_policy(store: ArtifactStore) -> ArtifactId:
     if not policies:
         raise ProjectActivationError(
             "project has no frozen router policy; run exp optimize router "
-            "or store a tag-rules router policy"
+            "or exp config gateway router tags"
         )
     if len(policies) > 1:
         raise ProjectActivationError(
